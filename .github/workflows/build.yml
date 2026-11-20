@@ -1,0 +1,47 @@
+name: Build LiquidGlassBar (Rootless)
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Rootless .deb
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies (ldid, dpkg, xz)
+        run: |
+          brew update
+          brew install ldid dpkg xz
+
+      - name: Setup Theos & Patched iOS SDKs
+        run: |
+          git clone --depth=1 --recursive https://github.com/theos/theos.git "$HOME/theos"
+          mkdir -p "$HOME/theos/sdks"
+          curl -fsSL https://github.com/theos/sdks/archive/master.zip -o /tmp/theos-sdks.zip
+          unzip -q /tmp/theos-sdks.zip -d /tmp/theos-sdks
+          cp -R /tmp/theos-sdks/*/*.sdk "$HOME/theos/sdks/"
+          ls -la "$HOME/theos/sdks/"
+
+      - name: Compile & Package Rootless .deb
+        env:
+          THEOS: ${{ runner.home }}/theos
+          THEOS_PACKAGE_SCHEME: rootless
+        run: |
+          export PATH="$THEOS/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          ls -lh packages/
+
+      - name: Upload .deb Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: LiquidGlassBar-rootless-deb
+          path: packages/*.deb
+          if-no-files-found: error
