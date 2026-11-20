@@ -56,8 +56,7 @@ static void LGBLog(NSString *fmt, ...) {
 
     dispatch_async(logQueue, ^{
         @try {
-            NSString *line = [NSString stringWithFormat:@"%@ %@
-",
+            NSString *line = [NSString stringWithFormat:@"%@ %@\n",
                               [NSDateFormatter localizedStringFromDate:[NSDate date]
                                                              dateStyle:NSDateFormatterNoStyle
                                                              timeStyle:NSDateFormatterMediumStyle],
@@ -963,8 +962,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
 - (void)dumpBottomHierarchy:(UIWindow *)win {
     if (self.dumpedBottomHierarchy || !win || !pDebug) return;
     self.dumpedBottomHierarchy = YES;
-    NSMutableString *out = [NSMutableString stringWithString:@"--- Cay view vung day ---
-"];
+    NSMutableString *out = [NSMutableString stringWithString:@"--- Cay view vung day ---\n"];
     NSInteger lines = 0;
     [self dumpView:win window:win depth:0 into:out lines:&lines];
     LGBLog(@"%@", out);
@@ -977,8 +975,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
         (*lines)++;
         NSMutableString *pad = [NSMutableString string];
         for (NSInteger i = 0; i < depth; i++) [pad appendString:@"  "];
-        [out appendFormat:@"%@%@ %@
-", pad, NSStringFromClass([v class]), NSStringFromCGRect(v.frame)];
+        [out appendFormat:@"%@%@ %@\n", pad, NSStringFromClass([v class]), NSStringFromCGRect(v.frame)];
     }
     if (depth < 14) {
         for (UIView *sub in v.subviews) {

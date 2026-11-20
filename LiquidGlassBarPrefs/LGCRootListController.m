@@ -109,15 +109,9 @@ static NSString *LGCHexFromColor(UIColor *color) {
 
     NSString *msg = nil;
     if (!last) {
-        msg = [NSString stringWithFormat:@"Ứng dụng đang bật: %@
-
-Chưa ghi nhận lần nạp nào. Hãy vào 'Chọn ứng dụng áp dụng' bật ứng dụng bạn muốn dùng, sau đó tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.", appsSummary];
+        msg = [NSString stringWithFormat:@"Ứng dụng đang bật: %@\n\nChưa ghi nhận lần nạp nào. Hãy vào 'Chọn ứng dụng áp dụng' bật ứng dụng bạn muốn dùng, sau đó tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.", appsSummary];
     } else {
-        msg = [NSString stringWithFormat:@"Ứng dụng đang bật (%lu): %@
-
-Lần nạp gần nhất: %@
-Trạng thái thanh bar: %@
-Số lần quét tìm bar: %@",
+        msg = [NSString stringWithFormat:@"Ứng dụng đang bật (%lu): %@\n\nLần nạp gần nhất: %@\nTrạng thái thanh bar: %@\nSố lần quét tìm bar: %@",
                (unsigned long)enabledApps.count, appsSummary, last, state ?: @"(chưa có)", scans ?: @0];
     }
 
