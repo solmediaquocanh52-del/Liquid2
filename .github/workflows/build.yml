@@ -24,10 +24,9 @@ jobs:
       - name: Setup Theos & Patched iOS SDKs
         run: |
           git clone --depth=1 --recursive https://github.com/theos/theos.git "$HOME/theos"
+          git clone --depth=1 https://github.com/theos/sdks.git /tmp/theos-sdks
           mkdir -p "$HOME/theos/sdks"
-          curl -fsSL https://github.com/theos/sdks/archive/master.zip -o /tmp/theos-sdks.zip
-          unzip -q /tmp/theos-sdks.zip -d /tmp/theos-sdks
-          cp -R /tmp/theos-sdks/*/*.sdk "$HOME/theos/sdks/"
+          mv /tmp/theos-sdks/*.sdk "$HOME/theos/sdks/"
           ls -la "$HOME/theos/sdks/"
 
       - name: Compile & Package Rootless .deb
