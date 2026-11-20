@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>items</key>
+	<array>
+		<!-- Xem trước trực quan -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Xem trước thanh kính</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSTableCell</string>
+			<key>cellClass</key>
+			<string>LGCPreviewCell</string>
+			<key>height</key>
+			<integer>138</integer>
+		</dict>
+
+		<!-- Kích hoạt & Chọn ứng dụng -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Kích hoạt &amp; Ứng dụng</string>
+			<key>footerText</key>
+			<string>Bật những ứng dụng bạn muốn dùng thanh Liquid Glass. Sau khi chọn ứng dụng mới, hãy tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>enabled</string>
+			<key>label</key>
+			<string>Bật LiquidGlassBar</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSLinkCell</string>
+			<key>label</key>
+			<string>Chọn ứng dụng áp dụng (AppList)</string>
+			<key>detail</key>
+			<string>ALApplicationPreferenceViewController</string>
+			<key>ALSettingsPath</key>
+			<string>/var/jb/var/mobile/Library/Preferences/com.vn.liquidglassbar.plist</string>
+			<key>ALSettingsKeyPrefix</key>
+			<string>AppEnabled-</string>
+			<key>ALSettingsDefaultValue</key>
+			<false/>
+			<key>ALChangeNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+			<key>ALAllowsSelection</key>
+			<true/>
+			<key>isController</key>
+			<true/>
+		</dict>
+
+		<!-- Chuyển động & Cảm giác kéo -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Chuyển động &amp; Cử chỉ</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>dragEnabled</string>
+			<key>label</key>
+			<string>Kéo trượt cục kính để chuyển mục</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>haptics</string>
+			<key>label</key>
+			<string>Rung phản hồi khi lướt qua từng mục</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Độ nảy lò xo (%)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>55.0</real>
+			<key>min</key>
+			<real>0.0</real>
+			<key>max</key>
+			<real>100.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>springPct</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Độ giãn kính dẻo khi kéo (%)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>60.0</real>
+			<key>min</key>
+			<real>0.0</real>
+			<key>max</key>
+			<real>100.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>stretchPct</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+
+		<!-- Màu sắc & Độ trong suốt -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Màu sắc &amp; Độ trong suốt</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>cellClass</key>
+			<string>LGCColorCell</string>
+			<key>action</key>
+			<string>openSelectedColorPicker:</string>
+			<key>colorKey</key>
+			<string>selectedColorHex</string>
+			<key>defaultHex</key>
+			<string>#0084FF</string>
+			<key>label</key>
+			<string>Màu mục đang chọn</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>cellClass</key>
+			<string>LGCColorCell</string>
+			<key>action</key>
+			<string>openGlassTintColorPicker:</string>
+			<key>colorKey</key>
+			<string>glassTintHex</string>
+			<key>defaultHex</key>
+			<string>#FFFFFF</string>
+			<key>label</key>
+			<string>Màu nhuộm nền kính</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Độ đậm nền kính</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>0.85</real>
+			<key>min</key>
+			<real>0.1</real>
+			<key>max</key>
+			<real>1.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>glassAlpha</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Độ đậm cục kính chọn</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>0.95</real>
+			<key>min</key>
+			<real>0.1</real>
+			<key>max</key>
+			<real>1.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>blobAlpha</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+
+		<!-- Kích thước & Căn lề -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Kích thước &amp; Căn lề</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Chiều rộng cục kính (%)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>100.0</real>
+			<key>min</key>
+			<real>50.0</real>
+			<key>max</key>
+			<real>150.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>blobWidthPct</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Chiều cao cục kính (%)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>100.0</real>
+			<key>min</key>
+			<real>40.0</real>
+			<key>max</key>
+			<real>150.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>blobHeightPct</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSStaticTextCell</string>
+			<key>label</key>
+			<string>Lề ngang thanh bar (pt)</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSliderCell</string>
+			<key>default</key>
+			<real>8.0</real>
+			<key>min</key>
+			<real>0.0</real>
+			<key>max</key>
+			<real>30.0</real>
+			<key>showValue</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>pillInset</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+
+		<!-- Chẩn đoán & Khôi phục -->
+		<dict>
+			<key>cell</key>
+			<string>PSGroupCell</string>
+			<key>label</key>
+			<string>Chẩn đoán &amp; Khôi phục</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<false/>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>debug</string>
+			<key>label</key>
+			<string>Ghi nhật ký chẩn đoán (chạy nền)</string>
+			<key>PostNotification</key>
+			<string>com.vn.liquidglassbar/prefsChanged</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>action</key>
+			<string>showDiagnostics:</string>
+			<key>label</key>
+			<string>Xem trạng thái nạp tweak</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSButtonCell</string>
+			<key>action</key>
+			<string>resetDefaults:</string>
+			<key>label</key>
+			<string>Khôi phục cài đặt mặc định</string>
+		</dict>
+	</array>
+	<key>title</key>
+	<string>LiquidGlassBar</string>
+</dict>
+</plist>
