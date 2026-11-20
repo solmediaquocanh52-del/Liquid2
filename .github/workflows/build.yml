@@ -30,12 +30,11 @@ jobs:
           ls -la "$HOME/theos/sdks/"
 
       - name: Compile & Package Rootless .deb
-        env:
-          THEOS: ${{ runner.home }}/theos
-          THEOS_PACKAGE_SCHEME: rootless
         run: |
+          export THEOS="$HOME/theos"
+          export THEOS_PACKAGE_SCHEME=rootless
           export PATH="$THEOS/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
-          make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
+          make clean package FINALPACKAGE=1
           ls -lh packages/
 
       - name: Upload .deb Artifact
