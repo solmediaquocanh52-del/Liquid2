@@ -1,5 +1,5 @@
-// LiquidGlassBar 1.4.2 — Thanh tab bar Liquid Glass mượt mà 60/120fps
-// Hỗ trợ libSparkAppList (SparkAppListTableViewController) + AltList + GPU Layer thuần.
+// LiquidGlassBar 1.5.0 — Thanh tab bar Liquid Glass mượt mà 60/120fps
+// Tương thích bộ chọn ứng dụng tích hợp sẵn (enabledApps) + AltList + GPU Layer thuần.
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
@@ -26,6 +26,7 @@ static const NSInteger LGB_BG_TAG = 712001;
 static const NSInteger LGB_INDICATOR_TAG = 712002;
 static const NSInteger LGB_TINT_COLOR_TAG = 712012;
 
+static BOOL gTweakActivated = NO;
 static BOOL pEnabled = YES;
 static BOOL pDragEnabled = YES;
 static BOOL pHaptics = YES;
@@ -73,7 +74,7 @@ static void LGBLog(NSString *fmt, ...) {
     });
 }
 
-// ------------------------------------------------------------------ prefs & AppList (libSparkAppList + AltList)
+// ------------------------------------------------------------------ prefs & AppList
 static NSDictionary *LGBReadPlistDict(void) {
     NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:LGB_ROOTLESS_PLIST];
     if (!dict) {
@@ -106,8 +107,9 @@ static BOOL LGBCheckEnabledAppsObject(id enabledAppsObj, NSString *bundleID) {
 
 static BOOL LGBIsAppEnabled(NSString *bundleID) {
     if (!bundleID || bundleID.length == 0) return NO;
+    CFPreferencesAppSynchronize((__bridge CFStringRef)LGB_DOMAIN);
 
-    // 1. Kiểm tra mảng enabledApps từ libSparkAppList (SparkAppListTableViewController)
+    // 1. Kiểm tra danh sách enabledApps từ bộ chọn ứng dụng tích hợp sẵn
     CFPropertyListRef cfApps = CFPreferencesCopyAppValue(CFSTR("enabledApps"),
                                                          (__bridge CFStringRef)LGB_DOMAIN);
     id appsObj = (__bridge_transfer id)cfApps;
@@ -115,7 +117,7 @@ static BOOL LGBIsAppEnabled(NSString *bundleID) {
         return YES;
     }
 
-    // 2. Kiểm tra khoá AppEnabled-<bundleID> (tương thích ngược AltList / AppList)
+    // 2. Kiểm tra khoá AppEnabled-<bundleID> (tương thích ngược)
     NSString *appKey = [@"AppEnabled-" stringByAppendingString:bundleID];
     CFPropertyListRef cfFlag = CFPreferencesCopyAppValue((__bridge CFStringRef)appKey,
                                                          (__bridge CFStringRef)LGB_DOMAIN);
@@ -124,7 +126,7 @@ static BOOL LGBIsAppEnabled(NSString *bundleID) {
         return YES;
     }
 
-    // 3. Dự phòng đọc trực tiếp từ file plist rootless/rootful nếu sandbox chặn cfprefsd
+    // 3. Dự phòng đọc trực tiếp file plist rootless/rootful
     NSDictionary *dict = LGBReadPlistDict();
     if (dict) {
         if (LGBCheckEnabledAppsObject(dict[@"enabledApps"], bundleID)) {
@@ -335,6 +337,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
 @property (nonatomic, assign) BOOL dumpedBottomHierarchy;
 + (instancetype)shared;
 - (void)start;
+- (void)stopAndCleanup;
 - (void)writeDiagState:(NSString *)state;
 - (void)reloadPrefs;
 - (void)styleTabBar:(UITabBar *)bar;
@@ -406,29 +409,47 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
     LGBDiagWrite(@"diag_lastLoadAt", LGBNowString());
     LGBDiagWrite(@"diag_process", bid);
     [self writeDiagState:[NSString stringWithFormat:@"Da nap vao %@, dang quet thanh bar...", bid]];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidBecomeActiveNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(appDidBecomeActive:)
                                                  name:UIApplicationDidBecomeActiveNotification
                                                object:nil];
+    [self.scanTimer invalidate];
     self.scanTimer = [NSTimer scheduledTimerWithTimeInterval:1.5
                                                       target:self
                                                     selector:@selector(scanTick:)
                                                     userInfo:nil
                                                      repeats:YES];
+    [self scanTick:nil];
+}
+
+- (void)stopAndCleanup {
+    [self.scanTimer invalidate];
+    self.scanTimer = nil;
+    if (self.tabBar) {
+        [[self.tabBar viewWithTag:LGB_BG_TAG] removeFromSuperview];
+        [[self.tabBar viewWithTag:LGB_INDICATOR_TAG] removeFromSuperview];
+    }
+    if (self.customBar) {
+        [[self.customBar viewWithTag:LGB_BG_TAG] removeFromSuperview];
+        [[self.customBar viewWithTag:LGB_INDICATOR_TAG] removeFromSuperview];
+    }
 }
 
 - (void)reloadPrefs {
+    NSString *bid = [[NSBundle mainBundle] bundleIdentifier] ?: @"";
+    if (!LGBIsAppEnabled(bid)) {
+        [self stopAndCleanup];
+        return;
+    }
     LGBLoadPrefs();
     self.lastStyledBarSize = CGSizeZero;
     if (!pEnabled) {
-        if (self.tabBar) {
-            [[self.tabBar viewWithTag:LGB_BG_TAG] removeFromSuperview];
-            [[self.tabBar viewWithTag:LGB_INDICATOR_TAG] removeFromSuperview];
-        }
-        if (self.customBar) {
-            [[self.customBar viewWithTag:LGB_BG_TAG] removeFromSuperview];
-            [[self.customBar viewWithTag:LGB_INDICATOR_TAG] removeFromSuperview];
-        }
+        [self stopAndCleanup];
+        return;
+    }
+    if (!self.scanTimer) {
+        [self start];
         return;
     }
     if (self.tabBar) [self styleTabBar:self.tabBar];
@@ -641,8 +662,8 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
     self.animationGeneration++;
     NSUInteger gen = self.animationGeneration;
 
-    [UIView animateWithDuration:0.44 delay:0
-         usingSpringWithDamping:[self springDamping] initialSpringVelocity:0.65
+    [UIView animateWithDuration:0.42 delay:0
+         usingSpringWithDamping:[self springDamping] initialSpringVelocity:0.70
                         options:UIViewAnimationOptionBeginFromCurrentState | UIViewAnimationOptionAllowUserInteraction
                      animations:^{
                          ind.transform = CGAffineTransformMakeTranslation(dx, 0);
@@ -822,7 +843,6 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
             if (ctrl) {
                 [ctrl addTarget:self action:@selector(customItemTapped:) forControlEvents:UIControlEventTouchUpInside];
             }
-            // Gắn thêm UITapGestureRecognizer đồng thời cho các app dùng gesture (như Messenger)
             BOOL hasOurTap = NO;
             for (UIGestureRecognizer *gr in item.gestureRecognizers) {
                 if ([gr isKindOfClass:[UITapGestureRecognizer class]] && gr.delegate == self) {
@@ -978,7 +998,6 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
             CGFloat txMax = CGRectGetMaxX(pill) - 3.0 - CGRectGetMaxX(blob.frame);
             tx = MIN(MAX(tx, txMin), txMax);
 
-            // Bộ lọc làm mượt vận tốc (EMA) giúp hiệu ứng kính dẻo giãn/co êm ái
             CGFloat rawDx = x - self.lastDragX;
             self.lastDragX = x;
             self.smoothedVelocityX = self.smoothedVelocityX * 0.65 + rawDx * 0.35;
@@ -1163,7 +1182,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
 
 @end
 
-// ------------------------------------------------------------------ hooks (chỉ kích hoạt cho app được chọn)
+// ------------------------------------------------------------------ hooks
 %group LiquidGlassBarHooks
 
 %hook UITabBar
@@ -1179,12 +1198,34 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
 
 %end
 
-// ------------------------------------------------------------------ ctor
+// ------------------------------------------------------------------ ctor & kích hoạt động
+static void LGBActivateIfNeeded(void) {
+    NSString *bid = [[NSBundle mainBundle] bundleIdentifier];
+    if (!bid) return;
+    if (!LGBIsAppEnabled(bid)) {
+        if (gTweakActivated) {
+            [[LGBManager shared] stopAndCleanup];
+        }
+        return;
+    }
+    LGBLoadPrefs();
+    if (!gTweakActivated) {
+        gTweakActivated = YES;
+        %init(LiquidGlassBarHooks);
+    }
+    [[LGBManager shared] start];
+}
+
 static void LGBPrefsChanged(CFNotificationCenterRef center, void *observer,
                             CFStringRef name, const void *object,
                             CFDictionaryRef userInfo) {
+    (void)center; (void)observer; (void)name; (void)object; (void)userInfo;
     dispatch_async(dispatch_get_main_queue(), ^{
-        [[LGBManager shared] reloadPrefs];
+        if (!gTweakActivated) {
+            LGBActivateIfNeeded();
+        } else {
+            [[LGBManager shared] reloadPrefs];
+        }
     });
 }
 
@@ -1197,14 +1238,9 @@ static void LGBPrefsChanged(CFNotificationCenterRef center, void *observer,
             [bid hasPrefix:@"com.apple.WebKit"]) {
             return;
         }
-        if (!LGBIsAppEnabled(bid)) {
-            return;
-        }
-        LGBLoadPrefs();
-        %init(LiquidGlassBarHooks);
-        [[LGBManager shared] start];
         CFNotificationCenterAddObserver(CFNotificationCenterGetDarwinNotifyCenter(), NULL,
             LGBPrefsChanged, (__bridge CFStringRef)LGB_PREFS_NOTIFICATION, NULL,
             CFNotificationSuspensionBehaviorDeliverImmediately);
+        LGBActivateIfNeeded();
     }
 }

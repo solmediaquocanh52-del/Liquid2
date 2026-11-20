@@ -1,4 +1,5 @@
 #import "LGCRootListController.h"
+#import "LGCAppListController.h"
 
 static NSString *const LGC_DOMAIN = @"com.vn.liquidglassbar";
 static NSString *const LGC_PREFS_NOTIFICATION = @"com.vn.liquidglassbar/prefsChanged";
@@ -47,6 +48,12 @@ static NSString *LGCHexFromColor(UIColor *color) {
     [super viewWillAppear:animated];
     CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
         (__bridge CFStringRef)LGC_PREFS_NOTIFICATION, NULL, NULL, YES);
+}
+
+- (void)openAppList:(id)sender {
+    (void)sender;
+    LGCAppListController *vc = [[LGCAppListController alloc] init];
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void)openSelectedColorPicker:(id)sender {
@@ -114,7 +121,7 @@ static NSString *LGCHexFromColor(UIColor *color) {
 
     NSString *msg = nil;
     if (!last) {
-        msg = [NSString stringWithFormat:@"Ứng dụng đang bật: %@\n\nChưa ghi nhận lần nạp nào. Hãy vào 'Chọn ứng dụng áp dụng' tích chọn ứng dụng muốn dùng, sau đó tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.", appsSummary];
+        msg = [NSString stringWithFormat:@"Ứng dụng đang bật: %@\n\nChưa ghi nhận lần nạp nào. Hãy vào 'Chọn ứng dụng áp dụng' tích chọn ứng dụng muốn dùng, sau đó mở ứng dụng đó lên.", appsSummary];
     } else {
         msg = [NSString stringWithFormat:@"Ứng dụng đang bật (%lu): %@\n\nLần nạp gần nhất: %@\nTrạng thái thanh bar: %@\nSố lần quét tìm bar: %@",
                (unsigned long)enabledApps.count, appsSummary, last, state ?: @"(chưa có)", scans ?: @0];

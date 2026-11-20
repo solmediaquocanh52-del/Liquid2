@@ -1,9 +1,9 @@
 Package: com.vn.liquidglassbar
 Name: LiquidGlassBar
-Version: 1.4.2
+Version: 1.5.0
 Architecture: iphoneos-arm64
-Description: Thanh tab bar Liquid Glass mượt mà 60/120fps với cục kính kéo trượt cho các ứng dụng tuỳ chọn
+Description: Thanh tab bar Liquid Glass mượt mà 60/120fps với cục kính kéo trượt và bộ chọn ứng dụng tích hợp sẵn
 Maintainer: VN
 Author: VN
 Section: Tweaks
-Depends: mobilesubstrate (>= 0.9.5000), preferenceloader, com.spark.libsparkapplist | com.opa334.altlist
+Depends: mobilesubstrate (>= 0.9.5000), preferenceloader

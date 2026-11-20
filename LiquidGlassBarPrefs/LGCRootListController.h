@@ -1,6 +1,7 @@
 #import <Preferences/PSListController.h>
 
 @interface LGCRootListController : PSListController
+- (void)openAppList:(id)sender;
 - (void)openSelectedColorPicker:(id)sender;
 - (void)openGlassTintColorPicker:(id)sender;
 - (void)showDiagnostics:(id)sender;
