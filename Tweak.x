@@ -1,5 +1,5 @@
-// LiquidGlassBar 1.4.0 — Thanh tab bar Liquid Glass mượt mà 60/120fps
-// Hỗ trợ chọn ứng dụng linh hoạt qua AltList (AppList) + GPU Layer thuần.
+// LiquidGlassBar 1.4.2 — Thanh tab bar Liquid Glass mượt mà 60/120fps
+// Hỗ trợ libSparkAppList (SparkAppListTableViewController) + AltList + GPU Layer thuần.
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>
 #import <objc/runtime.h>
@@ -73,7 +73,7 @@ static void LGBLog(NSString *fmt, ...) {
     });
 }
 
-// ------------------------------------------------------------------ prefs & AppList
+// ------------------------------------------------------------------ prefs & AppList (libSparkAppList + AltList)
 static NSDictionary *LGBReadPlistDict(void) {
     NSDictionary *dict = [NSDictionary dictionaryWithContentsOfFile:LGB_ROOTLESS_PLIST];
     if (!dict) {
@@ -92,20 +92,48 @@ static id LGBGetPref(NSString *key, id def) {
     return fileVal ?: def;
 }
 
+static BOOL LGBCheckEnabledAppsObject(id enabledAppsObj, NSString *bundleID) {
+    if (!enabledAppsObj) return NO;
+    if ([enabledAppsObj isKindOfClass:[NSArray class]]) {
+        return [(NSArray *)enabledAppsObj containsObject:bundleID];
+    }
+    if ([enabledAppsObj isKindOfClass:[NSDictionary class]]) {
+        id flag = ((NSDictionary *)enabledAppsObj)[bundleID];
+        return [flag respondsToSelector:@selector(boolValue)] ? [flag boolValue] : NO;
+    }
+    return NO;
+}
+
 static BOOL LGBIsAppEnabled(NSString *bundleID) {
     if (!bundleID || bundleID.length == 0) return NO;
-    NSString *appKey = [@"AppEnabled-" stringByAppendingString:bundleID];
 
-    CFPropertyListRef v = CFPreferencesCopyAppValue((__bridge CFStringRef)appKey,
-                                                    (__bridge CFStringRef)LGB_DOMAIN);
-    id obj = (__bridge_transfer id)v;
-    if (obj != nil) {
-        return [obj boolValue];
+    // 1. Kiểm tra mảng enabledApps từ libSparkAppList (SparkAppListTableViewController)
+    CFPropertyListRef cfApps = CFPreferencesCopyAppValue(CFSTR("enabledApps"),
+                                                         (__bridge CFStringRef)LGB_DOMAIN);
+    id appsObj = (__bridge_transfer id)cfApps;
+    if (LGBCheckEnabledAppsObject(appsObj, bundleID)) {
+        return YES;
     }
+
+    // 2. Kiểm tra khoá AppEnabled-<bundleID> (tương thích ngược AltList / AppList)
+    NSString *appKey = [@"AppEnabled-" stringByAppendingString:bundleID];
+    CFPropertyListRef cfFlag = CFPreferencesCopyAppValue((__bridge CFStringRef)appKey,
+                                                         (__bridge CFStringRef)LGB_DOMAIN);
+    id flagObj = (__bridge_transfer id)cfFlag;
+    if (flagObj != nil && [flagObj respondsToSelector:@selector(boolValue)] && [flagObj boolValue]) {
+        return YES;
+    }
+
+    // 3. Dự phòng đọc trực tiếp từ file plist rootless/rootful nếu sandbox chặn cfprefsd
     NSDictionary *dict = LGBReadPlistDict();
-    id fileVal = dict[appKey];
-    if (fileVal != nil) {
-        return [fileVal boolValue];
+    if (dict) {
+        if (LGBCheckEnabledAppsObject(dict[@"enabledApps"], bundleID)) {
+            return YES;
+        }
+        id fileVal = dict[appKey];
+        if (fileVal != nil && [fileVal respondsToSelector:@selector(boolValue)] && [fileVal boolValue]) {
+            return YES;
+        }
     }
     return NO;
 }
@@ -305,7 +333,6 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
 @property (nonatomic, assign) NSInteger scanCount;
 @property (nonatomic, copy) NSString *diagState;
 @property (nonatomic, assign) BOOL dumpedBottomHierarchy;
-@property (nonatomic, copy) NSString *loggedCandidateSignature;
 + (instancetype)shared;
 - (void)start;
 - (void)writeDiagState:(NSString *)state;
@@ -316,6 +343,8 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
 - (void)tabBarSelectionChangedCustom;
 - (void)handlePan:(UILongPressGestureRecognizer *)pan;
 - (void)customItemTapped:(UIControl *)sender;
+- (void)customItemGestureTapped:(UITapGestureRecognizer *)tap;
+- (void)triggerTapGestureOnView:(UIView *)item;
 - (void)scanTick:(NSTimer *)timer;
 - (UIView *)pillBackgroundInBar:(UIView *)bar frame:(CGRect)frame belowItems:(NSArray<UIView *> *)items;
 - (LGBLiquidBlobView *)indicatorInBar:(UIView *)bar belowItems:(NSArray<UIView *> *)items;
@@ -722,7 +751,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
     }
 }
 
-// ---------------------------------------------------------- đường B: bar tự chế
+// ---------------------------------------------------------- đường B: bar tự chế (Messenger, Facebook, Telegram...)
 - (void)tintTree:(UIView *)v color:(UIColor *)color selected:(BOOL)selected {
     if (v.tag == LGB_BG_TAG || v.tag == LGB_INDICATOR_TAG) return;
     if (LGBLooksLikeBadge(v)) return;
@@ -790,7 +819,23 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
                     if ([sub isKindOfClass:[UIControl class]]) { ctrl = (UIControl *)sub; break; }
                 }
             }
-            if (ctrl) [ctrl addTarget:self action:@selector(customItemTapped:) forControlEvents:UIControlEventTouchUpInside];
+            if (ctrl) {
+                [ctrl addTarget:self action:@selector(customItemTapped:) forControlEvents:UIControlEventTouchUpInside];
+            }
+            // Gắn thêm UITapGestureRecognizer đồng thời cho các app dùng gesture (như Messenger)
+            BOOL hasOurTap = NO;
+            for (UIGestureRecognizer *gr in item.gestureRecognizers) {
+                if ([gr isKindOfClass:[UITapGestureRecognizer class]] && gr.delegate == self) {
+                    hasOurTap = YES;
+                    break;
+                }
+            }
+            if (!hasOurTap) {
+                UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(customItemGestureTapped:)];
+                tap.delegate = self;
+                tap.cancelsTouchesInView = NO;
+                [item addGestureRecognizer:tap];
+            }
         }
         NSString *bid = [[NSBundle mainBundle] bundleIdentifier] ?: @"app";
         [self writeDiagState:[NSString stringWithFormat:@"%@: Da ap kinh bar tu che %@ (%lu muc)",
@@ -810,6 +855,46 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
     }
 }
 
+- (void)customItemGestureTapped:(UITapGestureRecognizer *)tap {
+    if (!self.customBar || !self.customItems || self.dragEngaged) return;
+    UIView *tappedView = tap.view;
+    if (!tappedView) return;
+    for (NSInteger i = 0; i < (NSInteger)self.customItems.count; i++) {
+        UIView *item = self.customItems[i];
+        if (tappedView == item || [tappedView isDescendantOfView:item]) {
+            if (self.customSelectedIndex != i) {
+                self.customSelectedIndex = i;
+                [self tabBarSelectionChangedCustom];
+            }
+            return;
+        }
+    }
+}
+
+- (void)triggerTapGestureOnView:(UIView *)item {
+    if (!item) return;
+    NSMutableArray<UIView *> *viewsToCheck = [NSMutableArray arrayWithObject:item];
+    [viewsToCheck addObjectsFromArray:item.subviews];
+    for (UIView *v in viewsToCheck) {
+        for (UIGestureRecognizer *gr in v.gestureRecognizers) {
+            if (gr.delegate == self) continue;
+            if ([gr isKindOfClass:[UITapGestureRecognizer class]]) {
+                @try {
+                    NSArray *targets = [gr valueForKey:@"_targets"];
+                    for (id pair in targets) {
+                        id target = [pair valueForKey:@"_target"];
+                        SEL action = NSSelectorFromString([[pair valueForKey:@"_action"] description]);
+                        if (target && action && [target respondsToSelector:action]) {
+                            ((void (*)(id, SEL, id))objc_msgSend)(target, action, gr);
+                            return;
+                        }
+                    }
+                } @catch (__unused NSException *e) {}
+            }
+        }
+    }
+}
+
 - (void)selectCustomIndex:(NSInteger)idx {
     if (!self.customBar || idx < 0 || idx >= (NSInteger)self.customItems.count) return;
     self.customSelectedIndex = idx;
@@ -822,6 +907,8 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
     }
     if (ctrl) {
         [ctrl sendActionsForControlEvents:UIControlEventTouchUpInside];
+    } else {
+        [self triggerTapGestureOnView:item];
     }
     [self applyCustomSelectionVisual];
 }
@@ -1012,7 +1099,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
     for (UIView *sub in v.subviews) {
         if (sub.tag != LGB_BG_TAG && sub.tag != LGB_INDICATOR_TAG) rawCount++;
     }
-    if (inBottom && sizeOK && rawCount >= 3 && rawCount <= 8) {
+    if (inBottom && sizeOK && rawCount >= 2 && rawCount <= 8) {
         NSMutableArray<UIView *> *items = [NSMutableArray array];
         for (UIView *sub in v.subviews) {
             if (sub.tag == LGB_BG_TAG || sub.tag == LGB_INDICATOR_TAG) continue;
@@ -1020,7 +1107,7 @@ static BOOL LGBLooksLikeBadge(UIView *v) {
             if (![self viewLooksLikeTabItem:sub]) continue;
             [items addObject:sub];
         }
-        if (items.count >= 3 && items.count <= 7) {
+        if (items.count >= 2 && items.count <= 7) {
             [items sortUsingComparator:^NSComparisonResult(UIView *a, UIView *b) {
                 return a.frame.origin.x < b.frame.origin.x ? NSOrderedAscending : NSOrderedDescending;
             }];

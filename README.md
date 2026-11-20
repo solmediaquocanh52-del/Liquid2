@@ -1,17 +1,11 @@
-# LiquidGlassBar v1.4.0 (Rootless + AppList + GPU Liquid Glass)
+# LiquidGlassBar v1.4.2 (Rootless + libSparkAppList + GPU Liquid Glass)
 
-## Cấu trúc thư mục
-- `Makefile`, `control`, `LiquidGlassBar.plist`, `Tweak.x`
-- `layout/Library/PreferenceLoader/Preferences/LiquidGlassBar.plist`
-- `LiquidGlassBarPrefs/` (Toàn bộ mã nguồn trang Cài đặt & Xem trước trực tiếp)
+## Thay đổi ở bản 1.4.2
+- Sử dụng `SparkAppListTableViewController` (`libSparkAppList`) trong `Root.plist` để hiển thị đầy đủ danh sách ứng dụng & thanh tìm kiếm trên iOS 16.3.1 rootless.
+- Hỗ trợ đồng thời cả định dạng `enabledApps` (`libSparkAppList`) và `AppEnabled-<bundleID>` (`AltList`/`AppList`).
+- Bổ sung nhận diện & kích hoạt cử chỉ chạm (`UITapGestureRecognizer`) cho các ứng dụng dùng thanh bar tự chế như Messenger.
 
-## Yêu cầu trên máy (Sileo)
-- **AltList** (`com.opa334.altlist`) — dùng để hiển thị danh sách chọn ứng dụng trong Cài đặt.
-- **PreferenceLoader**
-
-## Cách biên dịch ra file .deb (Theos)
+## Biên dịch
 ```bash
-cd LiquidGlassBar
-make clean package
+make clean package FINALPACKAGE=1 THEOS_PACKAGE_SCHEME=rootless
 ```
-File `.deb` sẽ xuất ra tại thư mục `packages/`.

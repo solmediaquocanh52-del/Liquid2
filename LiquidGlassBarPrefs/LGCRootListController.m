@@ -88,6 +88,11 @@ static NSString *LGCHexFromColor(UIColor *color) {
     NSDictionary *fileDict = [NSDictionary dictionaryWithContentsOfFile:LGC_ROOTLESS_PLIST];
 
     NSMutableSet<NSString *> *enabledApps = [NSMutableSet set];
+    id arr1 = dict[@"enabledApps"];
+    if ([arr1 isKindOfClass:[NSArray class]]) [enabledApps addObjectsFromArray:arr1];
+    id arr2 = fileDict[@"enabledApps"];
+    if ([arr2 isKindOfClass:[NSArray class]]) [enabledApps addObjectsFromArray:arr2];
+
     for (NSString *k in dict) {
         if ([k hasPrefix:@"AppEnabled-"] && [dict[k] boolValue]) {
             [enabledApps addObject:[k substringFromIndex:@"AppEnabled-".length]];
@@ -109,7 +114,7 @@ static NSString *LGCHexFromColor(UIColor *color) {
 
     NSString *msg = nil;
     if (!last) {
-        msg = [NSString stringWithFormat:@"Ứng dụng đang bật: %@\n\nChưa ghi nhận lần nạp nào. Hãy vào 'Chọn ứng dụng áp dụng' bật ứng dụng bạn muốn dùng, sau đó tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.", appsSummary];
+        msg = [NSString stringWithFormat:@"Ứng dụng đang bật: %@\n\nChưa ghi nhận lần nạp nào. Hãy vào 'Chọn ứng dụng áp dụng' tích chọn ứng dụng muốn dùng, sau đó tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.", appsSummary];
     } else {
         msg = [NSString stringWithFormat:@"Ứng dụng đang bật (%lu): %@\n\nLần nạp gần nhất: %@\nTrạng thái thanh bar: %@\nSố lần quét tìm bar: %@",
                (unsigned long)enabledApps.count, appsSummary, last, state ?: @"(chưa có)", scans ?: @0];

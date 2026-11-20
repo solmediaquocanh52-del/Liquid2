@@ -27,7 +27,7 @@
 			<key>label</key>
 			<string>Kích hoạt &amp; Ứng dụng</string>
 			<key>footerText</key>
-			<string>Bật những ứng dụng bạn muốn dùng thanh Liquid Glass. Sau khi chọn ứng dụng mới, hãy tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.</string>
+			<string>Chọn những ứng dụng muốn dùng thanh Liquid Glass. Sau khi chọn ứng dụng mới, hãy tắt hẳn ứng dụng đó trong đa nhiệm và mở lại.</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -47,19 +47,17 @@
 			<key>cell</key>
 			<string>PSLinkCell</string>
 			<key>label</key>
-			<string>Chọn ứng dụng áp dụng (AppList)</string>
+			<string>Chọn ứng dụng áp dụng</string>
 			<key>detail</key>
-			<string>ALApplicationPreferenceViewController</string>
-			<key>ALSettingsPath</key>
-			<string>/var/jb/var/mobile/Library/Preferences/com.vn.liquidglassbar.plist</string>
-			<key>ALSettingsKeyPrefix</key>
-			<string>AppEnabled-</string>
-			<key>ALSettingsDefaultValue</key>
-			<false/>
-			<key>ALChangeNotification</key>
+			<string>SparkAppListTableViewController</string>
+			<key>defaults</key>
+			<string>com.vn.liquidglassbar</string>
+			<key>key</key>
+			<string>enabledApps</string>
+			<key>title</key>
+			<string>Chọn ứng dụng áp dụng</string>
+			<key>PostNotification</key>
 			<string>com.vn.liquidglassbar/prefsChanged</string>
-			<key>ALAllowsSelection</key>
-			<true/>
 			<key>isController</key>
 			<true/>
 		</dict>
